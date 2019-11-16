@@ -27,7 +27,7 @@ public class Population {
 
     public void crossover(int px, int amountOfChamps) {
         ArrayList<Individual> newPopulation = new ArrayList<>();
-        while (newPopulation.size() != population.size()) {
+        while (newPopulation.size() < population.size()) {
             Individual parentA = tournamentSelection(amountOfChamps);
             Individual parentB = tournamentSelection(amountOfChamps);
             Individual childA = parentA.copy();

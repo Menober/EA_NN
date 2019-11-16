@@ -2,6 +2,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptException;
 import org.openqa.selenium.chrome.ChromeDriver;
 
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import static org.openqa.selenium.Keys.ARROW_DOWN;
@@ -26,6 +27,7 @@ public class Main {
     }
 
     public void main() throws InterruptedException, JavascriptException {
+        Scanner scanner = new Scanner(System.in);
         // Optional. If not specified, WebDriver searches the PATH for chromedriver.
         System.setProperty("webdriver.chrome.driver", "src\\main\\resources\\chromedriver.exe");
         driver = new ChromeDriver();
@@ -40,18 +42,52 @@ public class Main {
         network.setConnections();
         network.randomWeights();
 
-        Population pop = new Population();
-        pop.generateRandomPop(10, network);
-        updateVariables();
+        String middleWeights = "-0.7617169844434182;0.20580859876997093;0.25707840726796705;0.9546330858619816;0.8473705660516764;0.46348604391588566;0.17229718773082192;-0.09410260089084987;-0.38462263154754983;0.3662803542666062;-0.2937457847482623;0.6925417620404628;0.3191415296727531;0.4719313897983759;-0.4002817156731191;-0.7081308941039619;0.9125062641529615;0.8540398734260357;-0.5170912431977748;0.5315402807915939;-0.33598294773492143;0.33097353738869595;-0.7012928679035986;-0.5027834791093708;0.18760612077257455;-0.9266803616981933;0.18321390504048507;0.7468151089441553;";
+        String outputWeights = "-0.9863638748381285;0.28109806832665685;-0.285803638374752;-0.8774148856724435;-0.1342219507107021;-0.42931503840702745;0.8569676794652559;-0.34255422503070965;";
 
+        Individual myIndiv = new Individual();
+        myIndiv.parseToMiddleWeights(middleWeights);
+        myIndiv.parseToOutputWeights(outputWeights);
+
+        Population pop = new Population();
+        for (int i = 0; i < 10; i++) {
+            pop.addIndiv(new Individual(myIndiv));
+            myIndiv.mutationMiddle(10000);
+            myIndiv.mutationOutput(10000);
+        }
+//        pop.generateRandomPop(10, network);
+
+        int px = 80000; //100000=100% 10000=10% 1000=1% 100=0.1%
+        int pm = 10000;//100000=100% 10000=10% 1000=1% 100=0.1%
+        int generations = 100;
         Individual bestEver = new Individual();
-        int px = 50000; //100000=100% 10000=10% 1000=1% 100=0.1%
-        int pm = 1;//100000=100% 10000=10% 1000=1% 100=0.1%
+
+       // EA(network, pop, px, pm, generations, bestEver);
+
+        String response = "";
+        while (!response.equals("n")) {
+            System.out.println("Koniec. Czy chcesz kontynuować? y/n");
+            response = scanner.nextLine();
+            if (response.equals("y")) {
+                System.out.println("Podaj kolejno px, pm, liczbe generacji:");
+                px = Integer.parseInt(scanner.nextLine());
+                pm = Integer.parseInt(scanner.nextLine());
+                generations = Integer.parseInt(scanner.nextLine());
+                EA(network, pop, px, pm, generations, bestEver);
+            }
+        }
+        driver.close();
+    }
+
+    private void EA(Network network, Population pop, int px, int pm, int generations, Individual bestEver) throws InterruptedException {
+        updateVariables();
         System.out.println("START");
-        for (int generation = 0; generation < 100; generation++) {
+
+        for (int generation = 0; generation < generations; generation++) {
             System.out.println("Generacja: " + generation);
             for (int i = 0; i < pop.population.size(); i++) {
                 network.setWeights(pop.population.get(i));
+                jump();
                 while (isCrashed == 1.0) {
                     jump();
                     Thread.sleep(50);
@@ -65,26 +101,30 @@ public class Main {
                     network.calcOutputLayer();
                     if (network.output.get(0).value > 0.5) {
                         jump();
+                        Thread.sleep(100);
                     } else if (network.output.get(1).value > 0.5) {
                         dodge();
+                        Thread.sleep(100);
                     }
+                    //printVariables();
                 }
                 pop.population.get(i).setFitness(ranDistance);
             }
+
             System.out.println("Najlepszy w populacji: " + pop.getBest().getFitness());
             System.out.println("Najgorszy w populacji: " + pop.getWorst().getFitness());
             if (bestEver.getFitness() < pop.getBest().getFitness()) {
                 bestEver = pop.getBest();
                 bestEver.printData();
             }
+
             pop.crossover(px, 2);
             pop.mutate(pm);
         }
 
         System.out.println("\nBEST EVER:");
         bestEver.printData();
-        System.out.println("koniec");
-        driver.close();
+
     }
 
     private Double[] getInputValues() {

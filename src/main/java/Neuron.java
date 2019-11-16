@@ -22,7 +22,7 @@ public class Neuron {
 
     public void iniRandomWeights() {
         for (int i = 0; i < weights.size(); i++) {
-            weights.set(i, Utils.randomDouble(Double.MIN_VALUE, Double.MAX_VALUE));
+            weights.set(i, Utils.randomDouble(-1.0, 1.0));
         }
     }
 }
